@@ -1312,6 +1312,15 @@ fun WelcomeScreen(
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
             Text(stringResource(R.string.label_fetch_video_info), fontWeight = FontWeight.Bold)
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "by Shankar V",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
