@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Download arrow with vertical gradient: light cyan top → deep cyan bottom -->
+    <path android:pathData="M47,22 L61,22 L61,57 L79,57 L54,80 L29,57 L47,57 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="22"
+                android:endX="54"
+                android:endY="80">
+                <item android:offset="0.0" android:color="#A8EAFF"/>
+                <item android:offset="0.5" android:color="#4ECBFF"/>
+                <item android:offset="1.0" android:color="#0F9FD8"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Left streams: bezier curves flowing into the upper stem -->
+    <!-- Top-left diagonal curve -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#994ECBFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M24,27 C34,26 42,30 46,35"/>
+    <!-- Middle-left horizontal curve -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#CC4ECBFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M22,44 C32,44 39,43 46,43"/>
+
+    <!-- Right streams: mirror bezier curves -->
+    <!-- Top-right diagonal curve -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#994ECBFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M84,27 C74,26 66,30 62,35"/>
+    <!-- Middle-right horizontal curve -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#CC4ECBFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M86,44 C76,44 69,43 62,43"/>
+
+    <!-- Source node dots (left) -->
+    <path
+        android:fillColor="#994ECBFF"
+        android:pathData="M24,23 A4,4 0 1 0 24,31 A4,4 0 1 0 24,23 Z"/>
+    <path
+        android:fillColor="#CC4ECBFF"
+        android:pathData="M22,40 A4,4 0 1 0 22,48 A4,4 0 1 0 22,40 Z"/>
+
+    <!-- Source node dots (right) -->
+    <path
+        android:fillColor="#994ECBFF"
+        android:pathData="M84,23 A4,4 0 1 0 84,31 A4,4 0 1 0 84,23 Z"/>
+    <path
+        android:fillColor="#CC4ECBFF"
+        android:pathData="M86,40 A4,4 0 1 0 86,48 A4,4 0 1 0 86,40 Z"/>
+
+</vector>

@@ -1,3 +1,64 @@
 <resources>
     <string name="app_name">NexusDL</string>
+    
+    <!-- Toast Messages -->
+    <string name="toast_enter_url">Please enter a URL</string>
+    <string name="toast_no_audio_format">Could not find suitable audio format to merge!</string>
+    <string name="toast_download_starting">Download starting for %1$s…</string>
+    <string name="toast_no_format_selected">No format selected!</string>
+    <string name="toast_notification_permission_granted">Notification permission granted</string>
+    <string name="toast_notification_permission_denied">Notification permission denied. Downloads will not show status.</string>
+    <string name="toast_download_in_progress">A download is already in progress. Please wait.</string>
+    
+    <!-- UI Labels -->
+    <string name="label_video_url">Video URL</string>
+    <string name="label_video">Video</string>
+    <string name="label_audio">Audio</string>
+    <string name="label_download_video">Download Selected Format</string>
+    <string name="label_download_audio">Download Audio</string>
+    <string name="label_play_video">Play Video</string>
+    <string name="label_open_downloads">Open Downloads Folder</string>
+    <string name="label_dismiss">Dismiss</string>
+    <string name="label_try_again">Try Again</string>
+    <string name="label_fetch_video_info">Fetch Video Info</string>
+    <string name="label_search">Search</string>
+    <string name="label_new_search">New Search</string>
+    <string name="label_paste">Paste from clipboard</string>
+    <string name="label_clear">Clear</string>
+    
+    <!-- Status Messages -->
+    <string name="status_download_complete">Download Complete!</string>
+    <string name="status_download_failed">Download Failed</string>
+    <string name="status_downloading">Downloading…</string>
+    <string name="status_merging">Merging files…</string>
+    <string name="status_saving">Saving to Downloads…</string>
+    
+    <!-- Error Messages -->
+    <string name="error_failed_to_load">Failed to load video</string>
+    <string name="error_invalid_url">Invalid URL. Please enter a URL starting with http:// or https://</string>
+    <string name="error_no_video_formats">No video formats available. Switch to the Audio tab to download.</string>
+    <string name="error_no_formats_available">No %1$s formats available</string>
+    
+    <!-- Info Messages -->
+    <string name="info_video_only_formats">High quality formats are video-only. Audio will be automatically downloaded and merged.</string>
+    <string name="info_enter_url_to_download">Enter a video URL to download in your preferred format</string>
+    
+    <!-- Format Labels -->
+    <string name="format_video_plus_audio">Video + Audio</string>
+    <string name="format_audio_will_merge">+ Audio will be merged</string>
+    <string name="format_audio_only">Audio Only</string>
+    <string name="format_video_only">Video Only</string>
+    <string name="format_size_unknown">Size unknown</string>
+    
+    <!-- App Labels -->
+    <string name="app_title">Nexus DL</string>
+    <string name="app_subtitle">Video Downloader</string>
+    
+    <!-- Content Descriptions -->
+    <string name="desc_video_thumbnail">Video Thumbnail</string>
+    <string name="desc_app_logo">App Logo</string>
+    <string name="desc_error">Error</string>
+    <string name="desc_warning">Warning</string>
+    <string name="desc_info">Info</string>
+    <string name="desc_check">Check</string>
 </resources>

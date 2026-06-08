@@ -1,21 +1,52 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Keep line numbers in stack traces for crash reports
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── Chaquopy (Python runtime) ────────────────────────────────────────────────
+-keep class com.chaquo.python.** { *; }
+-dontwarn com.chaquo.python.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── FFmpegKit ────────────────────────────────────────────────────────────────
+-keep class com.arthenica.ffmpegkit.** { *; }
+-dontwarn com.arthenica.ffmpegkit.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Kotlin Serialization ─────────────────────────────────────────────────────
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Keep all @Serializable data classes in this app
+-keep,includedescriptorclasses class com.kira.ytdlp.**$$serializer { *; }
+-keepclassmembers class com.kira.ytdlp.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.kira.ytdlp.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# ── Coil (image loading) ─────────────────────────────────────────────────────
+-keep class coil.** { *; }
+-dontwarn coil.**
+
+# ── AndroidX / Lifecycle / ViewModel ────────────────────────────────────────
+-keep class androidx.lifecycle.** { *; }
+-dontwarn androidx.lifecycle.**
+
+# ── Compose ──────────────────────────────────────────────────────────────────
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+
+# ── Kotlin coroutines ────────────────────────────────────────────────────────
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory { *; }
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler { *; }
+-dontwarn kotlinx.coroutines.**
+
+# ── OkHttp / Okio (pulled in transitively by Coil) ──────────────────────────
+-dontwarn okhttp3.**
+-dontwarn okio.**

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.YTDLP" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.YTDLP" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0A1017</item>
+    </style>
 </resources>
