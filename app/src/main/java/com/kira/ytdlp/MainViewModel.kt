@@ -51,6 +51,10 @@ class MainViewModel : ViewModel() {
     /** Whether to show video formats (true) or audio formats (false) */
     val showVideoFormats: StateFlow<Boolean> = _showVideoFormats.asStateFlow()
 
+    private val _selectedAudioFormatId = MutableStateFlow<String?>(null)
+    /** Explicitly selected audio format ID for merging with a video-only format. Null = auto (best). */
+    val selectedAudioFormatId: StateFlow<String?> = _selectedAudioFormatId.asStateFlow()
+
     private val _selectedSubtitle = MutableStateFlow<SubtitleOption?>(null)
     /** Currently selected subtitle option, or null for no subtitles */
     val selectedSubtitle: StateFlow<SubtitleOption?> = _selectedSubtitle.asStateFlow()
@@ -83,6 +87,10 @@ class MainViewModel : ViewModel() {
         _selectedFormatId.value = if (_selectedFormatId.value == formatId) null else formatId
     }
 
+    fun setSelectedAudioFormatId(id: String?) {
+        _selectedAudioFormatId.value = id
+    }
+
     fun setSelectedSubtitle(option: SubtitleOption?) {
         _selectedSubtitle.value = option
     }
@@ -95,6 +103,7 @@ class MainViewModel : ViewModel() {
         _url.value = ""
         _videoInfo.value = null
         _selectedFormatId.value = null
+        _selectedAudioFormatId.value = null
         _selectedSubtitle.value = null
         _hasSearched.value = false
         _showVideoFormats.value = true
@@ -156,6 +165,7 @@ class MainViewModel : ViewModel() {
         _isLoading.value = true
         _videoInfo.value = null
         _selectedFormatId.value = null
+        _selectedAudioFormatId.value = null
         _selectedSubtitle.value = null
         _hasSearched.value = true
         // Clear any completed download state when starting a new search

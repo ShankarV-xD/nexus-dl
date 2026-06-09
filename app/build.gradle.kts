@@ -105,6 +105,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended-android:1.6.8")
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    // FFmpegKit — stream mux/remux for VP9, AV1, H264 (replaces MediaMuxer)
+    implementation("com.arthenica:ffmpeg-kit-android:6.0-2.LTS")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

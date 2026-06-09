@@ -15,10 +15,10 @@ import android.os.Environment
 import android.os.IBinder
 import android.provider.MediaStore
 import android.util.Log
-import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
-import android.media.MediaMuxer
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.chaquo.python.Python
@@ -31,7 +31,6 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "DownloadService"
@@ -324,7 +323,7 @@ class DownloadService : Service() {
                 val vPath = videoFilePath ?: throw IOException("Missing video path for merging.")
                 val aPath = audioFilePath ?: throw IOException("Missing audio path for merging.")
 
-                tempFinalFilePath = mergeWithMediaMuxer(vPath, aPath, tempDir)
+                tempFinalFilePath = mergeWithFFmpeg(vPath, aPath, tempDir)
 
             } else {
                 if (BuildConfig.DEBUG) Log.i(TAG, "Single stream downloaded, no merge needed.")
@@ -684,98 +683,52 @@ class DownloadService : Service() {
     }
 
     /**
-     * Merges separate video and audio files into a single container using Android's
-     * built-in MediaMuxer (stream copy — no re-encoding).
+     * Merges separate video and audio files into a single container using FFmpegKit
+     * (stream copy — no re-encoding).
      *
-     * Automatically selects MP4 output for H.264/HEVC streams and WebM for VP9/VP8.
+     * Automatically selects MP4 output for H.264/HEVC streams and MKV for VP9/AV1/VP8,
+     * as Android MediaMuxer cannot handle those codecs reliably across API levels.
      *
      * @return Absolute path of the merged output file.
      * @throws Exception if tracks cannot be found or muxing fails.
      */
-    private fun mergeWithMediaMuxer(videoPath: String, audioPath: String, outputDir: String): String {
-        val videoExtractor = MediaExtractor()
-        val audioExtractor = MediaExtractor()
-        var muxer: MediaMuxer? = null
-        var outputPath = ""
-
+    private fun mergeWithFFmpeg(videoPath: String, audioPath: String, outputDir: String): String {
+        // Detect video codec from the downloaded file to pick the right output container.
+        // H264/HEVC → MP4 (universally supported).
+        // VP9, VP8, AV1 → MKV (MP4 doesn't reliably support Opus audio;
+        // Android's MediaMuxer can't handle these codecs on API < 34).
+        val extractor = MediaExtractor()
+        val videoMime: String
         try {
-            videoExtractor.setDataSource(videoPath)
-            audioExtractor.setDataSource(audioPath)
-
-            var videoTrackIdx = -1
-            var videoFormat: MediaFormat? = null
-            for (i in 0 until videoExtractor.trackCount) {
-                val fmt = videoExtractor.getTrackFormat(i)
-                if (fmt.getString(MediaFormat.KEY_MIME)?.startsWith("video/") == true) {
-                    videoTrackIdx = i; videoFormat = fmt; break
-                }
-            }
-
-            var audioTrackIdx = -1
-            var audioFormat: MediaFormat? = null
-            for (i in 0 until audioExtractor.trackCount) {
-                val fmt = audioExtractor.getTrackFormat(i)
-                if (fmt.getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true) {
-                    audioTrackIdx = i; audioFormat = fmt; break
-                }
-            }
-
-            if (videoFormat == null) throw IOException("No video track found in $videoPath")
-            if (audioFormat == null) throw IOException("No audio track found in $audioPath")
-
-            val videoMime = videoFormat.getString(MediaFormat.KEY_MIME) ?: ""
-            val useWebM = videoMime.contains("vp9", ignoreCase = true) || videoMime.contains("vp8", ignoreCase = true)
-            val ext = if (useWebM) "webm" else "mp4"
-            val muxerFmt = if (useWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
-
-            outputPath = File(outputDir, "merged_${System.currentTimeMillis()}.$ext").absolutePath
-            muxer = MediaMuxer(outputPath, muxerFmt)
-
-            videoExtractor.selectTrack(videoTrackIdx)
-            audioExtractor.selectTrack(audioTrackIdx)
-            val muxVideo = muxer.addTrack(videoFormat)
-            val muxAudio = muxer.addTrack(audioFormat)
-            muxer.start()
-
-            val maxVideoSize = videoFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4 * 1024 * 1024)
-            val maxAudioSize = audioFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 512 * 1024)
-            val buf = ByteBuffer.allocate(maxOf(maxVideoSize, maxAudioSize, 1024 * 1024))
-            val info = MediaCodec.BufferInfo()
-
-            videoExtractor.seekTo(0, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
-            while (true) {
-                info.size = videoExtractor.readSampleData(buf, 0)
-                if (info.size < 0) break
-                info.offset = 0
-                info.presentationTimeUs = videoExtractor.sampleTime
-                info.flags = videoExtractor.sampleFlags
-                muxer.writeSampleData(muxVideo, buf, info)
-                videoExtractor.advance()
-            }
-
-            audioExtractor.seekTo(0, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
-            while (true) {
-                info.size = audioExtractor.readSampleData(buf, 0)
-                if (info.size < 0) break
-                info.offset = 0
-                info.presentationTimeUs = audioExtractor.sampleTime
-                info.flags = audioExtractor.sampleFlags
-                muxer.writeSampleData(muxAudio, buf, info)
-                audioExtractor.advance()
-            }
-
-            muxer.stop()
-            if (BuildConfig.DEBUG) Log.i(TAG, "MediaMuxer merge successful: $outputPath")
-            return outputPath
-
-        } catch (e: Exception) {
-            if (outputPath.isNotEmpty()) File(outputPath).delete()
-            throw Exception("MediaMuxer merge failed: ${e.message}", e)
+            extractor.setDataSource(videoPath)
+            videoMime = (0 until extractor.trackCount)
+                .mapNotNull { extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME) }
+                .firstOrNull { it.startsWith("video/") } ?: ""
         } finally {
-            videoExtractor.release()
-            audioExtractor.release()
-            muxer?.release()
+            extractor.release()
         }
+
+        val needsMatroska = videoMime.contains("vp9", ignoreCase = true) ||
+                videoMime.contains("vp8", ignoreCase = true) ||
+                videoMime.contains("av01", ignoreCase = true) ||
+                videoMime.contains("av1", ignoreCase = true)
+
+        val ext = if (needsMatroska) "mkv" else "mp4"
+        val outputPath = File(outputDir, "merged_${System.currentTimeMillis()}.$ext").absolutePath
+
+        val cmd = "-y -i $videoPath -i $audioPath -c copy $outputPath"
+        if (BuildConfig.DEBUG) Log.d(TAG, "FFmpeg merge cmd: $cmd")
+
+        val session = FFmpegKit.execute(cmd)
+
+        if (!ReturnCode.isSuccess(session.returnCode) || !File(outputPath).exists()) {
+            File(outputPath).takeIf { it.exists() }?.delete()
+            val logs = session.allLogsAsString?.takeLast(400) ?: "no logs"
+            throw Exception("FFmpeg merge failed (rc=${session.returnCode}): $logs")
+        }
+
+        if (BuildConfig.DEBUG) Log.i(TAG, "FFmpeg merge successful: $outputPath")
+        return outputPath
     }
 
     /**

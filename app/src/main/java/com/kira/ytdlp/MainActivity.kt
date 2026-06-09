@@ -251,6 +251,7 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
     val hasSearched by vm.hasSearched.collectAsState()
     val showVideoFormats by vm.showVideoFormats.collectAsState()
     val selectedSubtitle by vm.selectedSubtitle.collectAsState()
+    val selectedAudioFormatId by vm.selectedAudioFormatId.collectAsState()
     val activeDownload by DownloadService.activeDownload.collectAsState()
 
     val context = LocalContext.current
@@ -298,6 +299,7 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
     }
 
     var subtitleExpanded by remember { mutableStateOf(false) }
+    var audioPickerExpanded by remember { mutableStateOf(false) }
 
     val selectedFormatObject by remember(selectedFormatId, videoFormats, audioFormats) {
         derivedStateOf {
@@ -702,6 +704,91 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
                                     }
                                 }
 
+                                // Audio track picker — only when a video-only format is selected
+                                if (showVideoFormats && isAudioOnlySelection == false &&
+                                    selectedFormatObject != null &&
+                                    (selectedFormatObject!!.acodec == null || selectedFormatObject!!.acodec == "none") &&
+                                    audioFormats.isNotEmpty()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Headphones,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier
+                                                    .padding(horizontal = 5.dp, vertical = 4.dp)
+                                                    .size(12.dp)
+                                            )
+                                        }
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            OutlinedButton(
+                                                onClick = {
+                                                    HapticFeedback.light(context)
+                                                    audioPickerExpanded = true
+                                                },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(36.dp),
+                                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                val selectedAudioFmt = audioFormats.find { it.formatId == selectedAudioFormatId }
+                                                val label = if (selectedAudioFmt != null) {
+                                                    buildString {
+                                                        append(selectedAudioFmt.formatNote ?: "Audio")
+                                                        selectedAudioFmt.abr?.let { append(" · ${it.toInt()}k") }
+                                                        selectedAudioFmt.extension?.let { append(" · ${it.uppercase()}") }
+                                                    }
+                                                } else "Auto (best quality)"
+                                                Text(
+                                                    text = "$label  ▾",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            DropdownMenu(
+                                                expanded = audioPickerExpanded,
+                                                onDismissRequest = { audioPickerExpanded = false }
+                                            ) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Auto — best quality") },
+                                                    onClick = {
+                                                        HapticFeedback.light(context)
+                                                        vm.setSelectedAudioFormatId(null)
+                                                        audioPickerExpanded = false
+                                                    }
+                                                )
+                                                audioFormats.forEach { fmt ->
+                                                    val fmtLabel = buildString {
+                                                        append(fmt.formatNote ?: "Audio")
+                                                        fmt.abr?.let { append(" · ${it.toInt()}k") }
+                                                        fmt.extension?.let { append(" · ${it.uppercase()}") }
+                                                    }
+                                                    DropdownMenuItem(
+                                                        text = { Text(fmtLabel) },
+                                                        onClick = {
+                                                            HapticFeedback.light(context)
+                                                            vm.setSelectedAudioFormatId(fmt.formatId)
+                                                            audioPickerExpanded = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // Info: explain auto-merge for video-only formats
                                 if (showVideoFormats && videoFormats.any { it.acodec == null || it.acodec == "none" }) {
                                     Card(
@@ -871,11 +958,13 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
 
                                 var audioIdToDownload: String? = null
                                 if (selectedObj.acodec == null || selectedObj.acodec == "none") {
-                                    audioIdToDownload = videoInfo?.formats
-                                        ?.filter { it.acodec != null && it.acodec != "none" && it.vcodec == "none" }
-                                        ?.sortedWith(compareByDescending { it.abr ?: 0.0 })
-                                        ?.firstOrNull()?.formatId
-                                    if (BuildConfig.DEBUG) Log.d(TAG, "Video format $videoId needs audio. Best audio: $audioIdToDownload")
+                                    // Use explicitly picked audio format, or fall back to best available
+                                    audioIdToDownload = selectedAudioFormatId
+                                        ?: videoInfo?.formats
+                                            ?.filter { it.acodec != null && it.acodec != "none" && it.vcodec == "none" }
+                                            ?.sortedWith(compareByDescending { it.abr ?: 0.0 })
+                                            ?.firstOrNull()?.formatId
+                                    if (BuildConfig.DEBUG) Log.d(TAG, "Video format $videoId needs audio. Chosen audio: $audioIdToDownload")
                                     if (audioIdToDownload == null) {
                                         Toast.makeText(context2, context2.getString(R.string.toast_no_audio_format), Toast.LENGTH_LONG).show()
                                         return@Button
