@@ -86,7 +86,7 @@ data class ProgressUpdate(
  * This service:
  * - Runs in the foreground with a persistent notification
  * - Downloads video and audio streams separately if needed
- * - Merges streams using Android MediaMuxer when necessary
+ * - Merges streams using FFmpegKit (stream copy, supports VP9/AV1/H264/HEVC)
  * - Saves files to the public Downloads folder via MediaStore
  * - Provides real-time progress updates via StateFlow
  * 
@@ -315,7 +315,7 @@ class DownloadService : Service() {
                 audioFilePath = audioResult.filepath
                 if (BuildConfig.DEBUG) Log.i(TAG, "Audio download successful (temp): $audioFilePath")
 
-                // --- 3. Merge using Android MediaMuxer (stream copy, no re-encoding) ---
+                // --- 3. Merge using FFmpegKit (stream copy, no re-encoding) ---
                 updateNotification(title, getString(R.string.status_merging), progress = PROGRESS_MERGING, isIndeterminate = true, isOngoing = true)
                 if (BuildConfig.DEBUG) Log.d(TAG, "Attempting to merge video and audio into temp dir")
                 ytdlpHelperModule.callAttr("set_download_phase", "merging")
@@ -683,20 +683,11 @@ class DownloadService : Service() {
     }
 
     /**
-     * Merges separate video and audio files into a single container using FFmpegKit
-     * (stream copy — no re-encoding).
-     *
-     * Automatically selects MP4 output for H.264/HEVC streams and MKV for VP9/AV1/VP8,
-     * as Android MediaMuxer cannot handle those codecs reliably across API levels.
-     *
-     * @return Absolute path of the merged output file.
-     * @throws Exception if tracks cannot be found or muxing fails.
+     * Merges separate video and audio files using FFmpegKit (stream copy — no re-encoding).
+     * Supports all codecs: H264, HEVC, VP9, AV1, and any audio codec.
+     * Output is MKV for VP9/AV1 (Matroska handles any codec), MP4 for H264/HEVC.
      */
     private fun mergeWithFFmpeg(videoPath: String, audioPath: String, outputDir: String): String {
-        // Detect video codec from the downloaded file to pick the right output container.
-        // H264/HEVC → MP4 (universally supported).
-        // VP9, VP8, AV1 → MKV (MP4 doesn't reliably support Opus audio;
-        // Android's MediaMuxer can't handle these codecs on API < 34).
         val extractor = MediaExtractor()
         val videoMime: String
         try {
@@ -716,7 +707,7 @@ class DownloadService : Service() {
         val ext = if (needsMatroska) "mkv" else "mp4"
         val outputPath = File(outputDir, "merged_${System.currentTimeMillis()}.$ext").absolutePath
 
-        val cmd = "-y -i $videoPath -i $audioPath -c copy $outputPath"
+        val cmd = "-y -i \"$videoPath\" -i \"$audioPath\" -c copy \"$outputPath\""
         if (BuildConfig.DEBUG) Log.d(TAG, "FFmpeg merge cmd: $cmd")
 
         val session = FFmpegKit.execute(cmd)
