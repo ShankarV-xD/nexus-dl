@@ -13,6 +13,25 @@ def _is_bot_detection_error(error_str):
             ('bot' in error_str.lower() and 'cookies' in error_str.lower()))
 
 
+def _map_error(error_str):
+    """Convert raw yt-dlp error strings into readable user messages."""
+    if 'login required' in error_str.lower() or 'rate-limit reached' in error_str.lower() or 'log in' in error_str.lower():
+        return "This platform requires you to be logged in. Instagram and Facebook often restrict access to authenticated users only."
+    if 'Remote end closed connection' in error_str or 'TransportError' in error_str or 'Connection reset' in error_str:
+        return "Connection refused by the server. This platform may be blocking automated requests from your network. Try again later or test on a real device."
+    if 'HTTP Error 403' in error_str or 'Forbidden' in error_str:
+        return "Access denied (403). The video may be age-restricted or region-locked."
+    if 'HTTP Error 404' in error_str or 'Not Found' in error_str:
+        return "Video not found (404). It may have been removed or the URL is invalid."
+    if 'Video unavailable' in error_str:
+        return "This video is unavailable. It may be private, deleted, or region-blocked."
+    if 'SSL' in error_str or 'certificate' in error_str.lower():
+        return "SSL error: could not verify the server's certificate. Check your network connection."
+    if 'Unsupported URL' in error_str:
+        return "This URL is not supported. NexusDL supports YouTube, Instagram, Facebook, TikTok, and Twitter."
+    return f"Could not load video: {error_str}"
+
+
 def _extract_subtitle_options(info_dict):
     """Return sorted list of {lang_code, lang_name, is_auto} dicts."""
     result = []
@@ -69,6 +88,10 @@ def get_video_info(url, cookiefile=None):
             'force_generic_extractor': False,
             'noplaylist': True,
             'nocheckcertificate': True,  # Android SSL cert bundle lacks some CDN chains
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
             **extra_opts,
         }
         if cookiefile:
@@ -86,13 +109,13 @@ def get_video_info(url, cookiefile=None):
             last_error = e
             if _is_bot_detection_error(error_str):
                 continue  # try next strategy
-            # Non-bot error — don't retry, surface it directly
-            return json.dumps({"error": f"YTDLP Error: {error_str}"})
+            # Non-bot error — map to user-friendly message and surface directly
+            return json.dumps({"error": _map_error(error_str)})
         except Exception as e:
-            return json.dumps({"error": f"Unexpected Python Error: {str(e)}"})
+            return json.dumps({"error": f"Unexpected error: {str(e)}"})
 
     if info_dict is None:
-        return json.dumps({"error": f"YTDLP Error: {str(last_error)}"})
+        return json.dumps({"error": _map_error(str(last_error))})
 
     all_formats = info_dict.get('formats', [])
     print(f"Python: yt-dlp returned {len(all_formats)} raw formats")
@@ -260,6 +283,10 @@ def download_single_format_with_progress(url, format_id, output_dir, cookiefile=
             'progress_hooks': [hook],
             'overwrites': True,
             'nocheckcertificate': True,  # Android SSL cert bundle lacks some CDN chains
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
             **extra_opts,
         }
         if cookiefile:
@@ -311,6 +338,10 @@ def download_single_format_with_progress(url, format_id, output_dir, cookiefile=
                 error_message = f"Format '{format_id}' is no longer available. Please go back and refresh the format list, then try a different format."
             elif "format not available" in error_str.lower():
                 error_message = "The selected format is not available. Please try another format."
+            elif "login required" in error_str.lower() or "rate-limit reached" in error_str.lower() or "log in" in error_str.lower():
+                error_message = "This platform requires you to be logged in to download this content. Instagram and Facebook often restrict access to authenticated users only."
+            elif "Remote end closed connection" in error_str or "Connection reset" in error_str or "TransportError" in error_str:
+                error_message = "Connection was refused by the server. This platform may be blocking automated requests from your network. Try again later or test on a real device."
             elif "HTTP Error 403" in error_str or "Forbidden" in error_str:
                 error_message = "Access denied (403). The video may be age-restricted or require authentication."
             elif "HTTP Error 404" in error_str or "Not Found" in error_str:
