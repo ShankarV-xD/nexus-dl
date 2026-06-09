@@ -68,6 +68,7 @@ def get_video_info(url, cookiefile=None):
             'no_warnings': True,
             'force_generic_extractor': False,
             'noplaylist': True,
+            'nocheckcertificate': True,  # Android SSL cert bundle lacks some CDN chains
             **extra_opts,
         }
         if cookiefile:
@@ -258,6 +259,7 @@ def download_single_format_with_progress(url, format_id, output_dir, cookiefile=
             'outtmpl': temp_output_template,
             'progress_hooks': [hook],
             'overwrites': True,
+            'nocheckcertificate': True,  # Android SSL cert bundle lacks some CDN chains
             **extra_opts,
         }
         if cookiefile:
@@ -346,6 +348,7 @@ def download_subtitle(url, lang_code, is_auto, output_dir, cookiefile=None):
         'subtitleslangs': [str(lang_code)],
         'subtitlesformat': 'srt/vtt/best',
         'outtmpl': os.path.join(output_dir, 'sub_%(id)s'),
+        'nocheckcertificate': True,  # Android SSL cert bundle lacks some CDN chains
     }
     if cookiefile:
         ydl_opts['cookiefile'] = cookiefile
