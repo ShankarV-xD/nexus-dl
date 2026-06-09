@@ -105,8 +105,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended-android:1.6.8")
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    // FFmpegKit — stream mux/demux for VP9, AV1, H264, HEVC (replaces MediaMuxer)
-    implementation("com.arthenica:ffmpeg-kit-android:6.0-2.LTS")
+    // FFmpegKit minimal — mux/demux only, no codec libs (~7-8 MB per ABI)
+    // Community-maintained fork published to Maven Central
+    implementation("io.github.maitrungduc1410:ffmpeg-kit-min:6.0.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
