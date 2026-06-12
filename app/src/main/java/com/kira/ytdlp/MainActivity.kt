@@ -25,6 +25,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -630,7 +632,7 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
                                                 },
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .height(36.dp),
+                                                    .heightIn(min = 36.dp),
                                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                                                 shape = RoundedCornerShape(8.dp)
                                             ) {
@@ -685,7 +687,7 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
                                                         context.startService(intent)
                                                     }
                                                 },
-                                                modifier = Modifier.height(36.dp),
+                                                modifier = Modifier.heightIn(min = 36.dp),
                                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                                                 shape = RoundedCornerShape(8.dp),
                                                 colors = ButtonDefaults.outlinedButtonColors(
@@ -738,7 +740,7 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
                                                 },
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .height(36.dp),
+                                                    .heightIn(min = 36.dp),
                                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                                                 shape = RoundedCornerShape(8.dp)
                                             ) {
@@ -998,7 +1000,7 @@ fun YtdlpInfoScreen(vm: MainViewModel = viewModel()) {
                         enabled = selectedFormatId != null && !isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(58.dp),
+                            .heightIn(min = 58.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -1234,7 +1236,11 @@ fun WelcomeScreen(
         label = "logo_scale"
     )
 
-    Column(
+    val scrollState = rememberScrollState()
+    // Scrollable + min-height-of-viewport: content stays vertically centered when it
+    // fits, and becomes scrollable (instead of clipped) on small screens or when the
+    // user has a large system font scale set.
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .padding(
@@ -1242,7 +1248,13 @@ fun WelcomeScreen(
                 bottom = systemPadding.calculateBottomPadding() + 16.dp,
                 start = 16.dp,
                 end = 16.dp
-            ),
+            )
+    ) {
+        Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+            .heightIn(min = maxHeight),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -1389,7 +1401,7 @@ fun WelcomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
-                .height(58.dp),
+                .heightIn(min = 58.dp),
             shape = RoundedCornerShape(16.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 8.dp)
         ) {
@@ -1410,6 +1422,7 @@ fun WelcomeScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
             textAlign = TextAlign.Center
         )
+        }
     }
 }
 
@@ -1523,7 +1536,7 @@ fun SearchBar(
                 if (!showRefresh || urlModified) onSearch() else onNewSearch()
             },
             enabled = !isLoading,
-            modifier = Modifier.height(56.dp),
+            modifier = Modifier.heightIn(min = 56.dp),
             shape = RoundedCornerShape(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
