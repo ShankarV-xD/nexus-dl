@@ -123,8 +123,12 @@ def get_video_info(url, cookiefile=None):
     valid_formats = []
     for fmt in all_formats:
         format_id = fmt.get('format_id')
-        format_url = fmt.get('url')
-        if not format_id or not format_url:
+        # A format is downloadable if it has a direct URL, a manifest (DASH/HLS),
+        # or fragments. Facebook/Instagram DASH streams often lack a plain 'url'
+        # and only carry manifest_url/fragments — don't drop those.
+        has_source = (fmt.get('url') or fmt.get('manifest_url') or
+                      fmt.get('fragment_base_url') or fmt.get('fragments'))
+        if not format_id or not has_source:
             continue
         # Drop image-only storyboard sequences
         if fmt.get('vcodec') == 'none' and fmt.get('acodec') == 'none':
